@@ -82,17 +82,8 @@ nyc_subway = read_csv("./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv")%>%
           route9 = as.character(route9),
           route10 = as.character(route10),
           route11 = as.character(route11))%>%
-  pivot_longer(route1:route11,
-               names_to = "route_number",
-               values_to = "route_names"
-  )%>%
-  drop_na(route_names)%>%
-  select(c("line","station_name","station_latitude","station_longitude","route_number","route_names","entry", "vending", "entrance_type","ada"))%>%
   mutate(entry = recode(entry, "YES" = TRUE, "NO" = FALSE))%>%
   unique()
-
-head(nyc_subway)
-  
 ```
 
 --------------------------------------
@@ -100,9 +91,11 @@ head(nyc_subway)
 How many distinct stations are there?
 
 ```{r}
-distinct(nyc_subway, station_name)
+nyc_subway%>%
+  distinct(station_name, line)%>%
+  nrow()
 ```
-there are `r nrow(distinct(nyc_subway, station_name))` distinct stations.
+there are `r nrow(distinct(nyc_subway, station_name,line))` distinct stations.
 
 -------------------------------
 
@@ -111,10 +104,10 @@ How many stations are ADA compliant?
 ```{r}
 nyc_subway%>%
   filter(ada == TRUE)%>%
-  distinct(station_name)%>%
+  distinct(station_name, line)%>%
   nrow()
 ```
-There are 73 stations with ADA compliant.
+There are `r nyc_subway%>%filter(ada == TRUE)%>%distinct(station_name, line)%>%nrow()` stations with ADA compliant.
 
 ---------------------------------------
 
@@ -128,20 +121,35 @@ no_venting = nyc_subway%>%
 venting_prop = no_venting/nrow(nyc_subway) 
 venting_prop*100 
 ```
-There is 17.77% of station entrances/exits don't have vending allow entrance.
+There is `r venting_prop*100`% of station entrances/exits don't have vending allow entrance.
 
 -------------------------------------
 
- How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
+Reformat the dataset
+```{r reformat}
+reformat_nyc_subway = nyc_subway%>%
+  pivot_longer(route1:route11,
+               names_to = "route_number",
+               values_to = "route_names"
+  )%>%
+  drop_na(route_names)%>%
+  select(c("line","station_name","station_latitude","station_longitude","route_number","route_names","entry", "vending", "entrance_type","ada"))
+
+head(reformat_nyc_subway)
+```
+
+----------------------------------------
+
+How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
  
  
 ```{r}
-nyc_subway%>%
+reformat_nyc_subway%>%
   filter(route_names == "A")%>%
   distinct(station_name)%>%
   nrow()
 
-nyc_subway%>%
+reformat_nyc_subway%>%
   filter(route_names == "A" & ada == TRUE)%>%
   distinct(station_name)%>%
   nrow()
